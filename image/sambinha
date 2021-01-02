@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+
+require 'thor'
+require 'awesome_print'
+require 'inifile'
+require 'yaml'
+
+CONFIG_FILE = ENV['SMB_CONFIG_FILE'] || "./smb.conf"
+
+module Sambinha
+  class User < Thor
+    desc "add <username>", "add a new user to the system and to samba"
+    option :password
+    option :secret
+    def add(username)
+      if options[:password]
+        passwd = "#{options[:password]}"
+      elsif options[:secret]
+        secrets = YAML.load(File.read(options[:secret]))
+        passwd = secrets["secrets"][username]
+      else
+        puts 'password is required to create user'
+        exit 1
+      end
+
+      puts `adduser --system #{username}`
+      puts `usermod -aG samba #{username}`
+      puts `(echo #{passwd} ; echo #{passwd}) | smbpasswd -a -s #{username}`
+    end
+  end
+
+  class Share < Thor
+    desc "dir <name>", "Reads/Creates a new sharing directory on samba with <name>"
+    option :path
+    option :'valid-users'
+    option :writeable
+    option :readonly
+    option :browseable
+    def dir(name)
+      config = IniFile.load CONFIG_FILE
+      config[name] = config[name] || {}
+
+      options.each do |k, v|
+        config[name][sambify(k)] = v
+      end
+
+      config.write unless options.empty?
+
+      ap config[name]
+    end
+
+    no_commands do
+      def sambify(k)
+        return 'valid users' if k == 'valid-users'
+        return 'read only' if k == 'readonly'
+
+        k
+      end
+    end
+  end
+
+  class CLI < Thor
+    desc "user", "manage users on samba/system"
+    subcommand "user", User
+
+    desc "share", "manage shared directories"
+    subcommand "share", Share
+  end
+end
+
+Sambinha::CLI.start ARGV
