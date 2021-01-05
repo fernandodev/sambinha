@@ -3,11 +3,11 @@ version: '3.4'
 services:
   samba:
     build: image
-    image: sambinha:1.0
+    image: sambinha:latest
     container_name: sambinha
     user: root
     secrets:
-      - samba-secret
+      - secret-config
     networks:
       - default
     ports:
@@ -21,15 +21,9 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - /mnt:/media
-    command: >-
-      bash -c '
-      sambinha user add username --secret /run/secrets/samba-secret ;
-      sambinha share dir media --path /media --writeable yes --valid-users username --browseable yes ;
-      service smbd start ;
-      tail -F /var/log/samba/log.smbd
-      '
+      - /Users/fernando/Downloads:/media
+    command: "start --yml /run/secrets/secret-config"
 
 secrets:
-  samba-secret:
-    file: .secret-samba.yml
+  secret-config:
+    file: .secret-config.yml

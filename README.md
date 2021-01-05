@@ -15,15 +15,20 @@ $ docker-compose down  # stop execution
 
 ### Setup
 
-**Users and Passwords**
+**Users, Passwords and Configurations**
 
 ```yaml
-# .secret-samba.yml
-
-secrets:
-    username: password
-    username2: password
-    # ...
+# .secret-config.yml
+users:
+  username: password
+  username2: password2
+shares:
+  sharingname:
+    path: /media
+    valid users: username, username2 # list of users separated by comma
+    read only: "no"                  # no, yes are reserved words. Double quote it.
+    writeable: "yes"
+    browseable: "yes"
 ```
 
 **Volumes**
@@ -39,11 +44,12 @@ volumes:
 **Sambinha Commands**
 
 ```sh
-$ sambinha user add <username> --secret </run/secrets/samba-secret> # creates a samba user
-$ sambinha user add <username> --password passwd # creates a samba user (plain password visible)
-$
-$ sambinha share dir <name> --path <mounting_path> --writeable <yes/no> --valid-users <username> --browseable <yes/no> # setups a new entry on smb.conf
+$ sambinha start --yml config.yml # for now only yml supported
 ```
+
+**Entrypoint**
+
+Entrypoint is defined as `ENTRYPOINT [ "tini", "--", "sambinha" ]`.
 
 ## 📝 Note
 
@@ -58,5 +64,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
